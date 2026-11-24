@@ -179,5 +179,5 @@ while ($true) {
     Write-Host "------------------------------------------------------------------" -ForegroundColor DarkGray
     $choice = (Read-Host "Seciminiz").Trim()
 
-    if ($choice -match '^(q\vert{}Q)$') { break }
-    if
+    if ($choice -match '^(q|Q)$') { break }
+    
