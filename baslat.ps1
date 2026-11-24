@@ -13,21 +13,26 @@ param(
     [int[]]$Ids
 )
 
-$ErrorActionPreference = 'Stop'$LogDir  = 'C:\Logs\MT-DuranBey'
-$LogFile = Join-Path$LogDir ("WinOpt_{0:yyyyMMdd_HHmmss}.log" -f (Get-Date))
+$ErrorActionPreference = 'Stop'
+$LogDir  = 'C:\Logs\MT-DuranBey'
+$LogFile = Join-Path $LogDir ("WinOpt_{0:yyyyMMdd_HHmmss}.log" -f (Get-Date))
 
 if (-not (Test-Path $LogDir)) {
     New-Item -Path $LogDir -ItemType Directory -Force | Out-Null
 }
 
 function Write-Log {
-    param([string]$Message, [string]$Level = 'INFO')$line = "[{0:yyyy-MM-dd HH:mm:ss}] [{1}] {2}" -f (Get-Date), $Level,$Message
-    Add-Content -Path $LogFile -Value$line -Encoding UTF8
+    param(
+        [string]$Message,
+        [string]$Level = 'INFO'
+    )
+    $line = "[{0:yyyy-MM-dd HH:mm:ss}] [{1}] {2}" -f (Get-Date), $Level, $Message
+    Add-Content -Path $LogFile -Value $line -Encoding UTF8
     switch ($Level) {
-        'OK'   { Write-Host $line -ForegroundColor Green }
-        'WARN' { Write-Host $line -ForegroundColor Yellow }
-        'ERR'  { Write-Host $line -ForegroundColor Red }
-        default{ Write-Host $line -ForegroundColor Cyan }
+        'OK'    { Write-Host $line -ForegroundColor Green }
+        'WARN'  { Write-Host $line -ForegroundColor Yellow }
+        'ERR'   { Write-Host $line -ForegroundColor Red }
+        default { Write-Host $line -ForegroundColor Cyan }
     }
 }
 
@@ -41,7 +46,7 @@ function Set-RegValue {
     if (-not (Test-Path $Path)) {
         New-Item -Path $Path -Force | Out-Null
     }
-    Set-ItemProperty -Path $Path -Name$Name -Value $Value -Type$Type -Force
+    Set-ItemProperty -Path $Path -Name $Name -Value $Value -Type $Type -Force
 }
 
 $Actions = @{
@@ -147,7 +152,7 @@ function Invoke-SelectedActions {
         $item = $Actions[$id]
         try {
             & $item.Run
-            Write-Log ("[{0:D2}] {1} -> Tamamlandi" -f $id,$item.Name) 'OK'
+            Write-Log ("[{0:D2}] {1} -> Tamamlandi" -f $id, $item.Name) 'OK'
         }
         catch {
             Write-Log ("[{0:D2}] {1} -> Hata: {2}" -f $id, $item.Name, $_.Exception.Message) 'ERR'
@@ -161,7 +166,7 @@ if ($All) {
     return
 }
 
-if ($Ids -and$Ids.Count -gt 0) {
+if ($Ids -and $Ids.Count -gt 0) {
     Invoke-SelectedActions -TargetIds $Ids
     return
 }
@@ -180,4 +185,18 @@ while ($true) {
     $choice = (Read-Host "Seciminiz").Trim()
 
     if ($choice -match '^(q|Q)$') { break }
-    
+    if ($choice -match '^(a|A)$') {
+        Invoke-SelectedActions -TargetIds (1..20)
+        Read-Host "Devam etmek icin Enter'a basin" | Out-Null
+        continue
+    }
+
+    $parsed = @()
+    foreach ($part in ($choice -split '[,\s]+')) {
+        if ($part -match '^\d+$') { $parsed += [int]$part }
+    }
+    if ($parsed.Count -gt 0) {
+        Invoke-SelectedActions -TargetIds $parsed
+        Read-Host "Devam etmek icin Enter'a basin" | Out-Null
+    }
+}
